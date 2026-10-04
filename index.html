@@ -6172,16 +6172,18 @@ if('speechSynthesis' in window){
 
 async function speak(text){
   // Android app (Capacitor) me native Text-to-Speech use karo
-  try {
-    if(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()){
-      if(!window.__nativeTTS) window.__nativeTTS = Capacitor.registerPlugin('TextToSpeech');
-      try { await window.__nativeTTS.stop(); } catch(e){}
-      await window.__nativeTTS.speak({ text: text, lang: 'en-US', rate: 0.85, pitch: 1.0, volume: 1.0 });
-      return;
+  if(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()){
+    try {
+      var TTS = (Capacitor.Plugins && Capacitor.Plugins.TextToSpeech) ||
+                (typeof Capacitor.registerPlugin === 'function' ? Capacitor.registerPlugin('TextToSpeech') : null);
+      if(!TTS) throw new Error('TextToSpeech plugin app me nahi mila');
+      try { await TTS.stop(); } catch(e){}
+      await TTS.speak({ text: text, lang: 'en-US', rate: 0.85, pitch: 1.0, volume: 1.0 });
+    } catch(e){
+      var msg = (e && (e.message || e.errorMessage)) || String(e);
+      alert('Voice error: ' + msg + '\n\nPhone Settings > Text-to-speech output me Google Speech Services select karo aur English voice data download karo.');
     }
-  } catch(e){
-    var msg = (e && (e.message || e.errorMessage)) || String(e);
-    alert('Voice error: ' + msg + '\n\nPhone Settings > Text-to-speech output me Google Text-to-speech select karo aur English (US) voice data download karo.');
+    return;
   }
   if(!('speechSynthesis' in window)){
     alert('Sorry, this browser does not support voice pronunciation.');
