@@ -86,18 +86,37 @@
     .controls{flex-direction:column;align-items:stretch;}
     .levels{justify-content:center;}
   }
+
+  /* ===== Top menu + Day wise + single level card ===== */
+  .topmenu{max-width:1000px;margin:0 auto;padding:18px 20px 6px;}
+  .topmenu .controls{max-width:none;margin:0;padding:0;}
+  .topmenu .stats-panel{margin:16px 0 0;}
+  .day-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;}
+  .day-row label{font-size:12px;font-weight:600;color:var(--muted);}
+  .day-row select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--ink);cursor:pointer;max-width:100%;}
+  .day-row select:focus{outline:2px solid var(--brass);outline-offset:1px;}
+  .day-nav{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);}
+  .day-nav:hover:not(:disabled){border-color:var(--brass);}
+  .day-nav:disabled{opacity:.35;cursor:not-allowed;}
+  .day-info{font-size:12px;color:var(--moss);font-weight:600;}
+  .day-sep{flex:1;}
+  .stats-panel.single{grid-template-columns:1fr;}
+  .stat-card.single{padding:16px 18px;}
+  .single-head{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;}
+  .single-head .stat-level{margin:0;font-size:13px;padding:3px 10px;}
+  .single-title{font-size:13px;color:var(--muted);}
+  .single-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+  .single-nums div{background:var(--paper);border-radius:10px;padding:10px 6px;}
+  .single-nums b{display:block;font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--ink);}
+  .single-nums span{font-size:12px;color:var(--muted);font-weight:600;}
+  .single-nums .n-read b{color:var(--moss);}
+  .single-nums .n-unread b{color:var(--c1);}
+  @media (max-width:520px){ .day-sep{display:none;} .single-nums b{font-size:22px;} }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>6000 Words, One Journey</h1>
-  <p class="creator-credit">Created by Mohammed Taufiq Bolwala</p>
-  <p>A1 → C2 · English definitions · 2-3 example sentences per word</p>
-  <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
-  <div class="progress-label" id="progressLabel">6000 of 6000 words — COMPLETE! 🎉</div>
-</header>
-
+<div class="topmenu">
 <div class="controls">
   <div class="search">
     <input type="text" id="searchBox" placeholder="Search a word or definition...">
@@ -110,8 +129,32 @@
   </div>
 </div>
 
-<main>
+  <div class="day-row">
+    <label for="daySelect">📅 Day</label>
+    <button class="day-nav" id="dayPrev" title="Previous day">‹ Prev</button>
+    <select id="daySelect"></select>
+    <button class="day-nav" id="dayNext" title="Next day">Next ›</button>
+    <span class="day-info" id="dayInfo"></span>
+    <span class="day-sep"></span>
+    <label for="perDaySelect">Words/day</label>
+    <select id="perDaySelect">
+      <option value="10">10</option><option value="15">15</option><option value="20">20</option>
+      <option value="25">25</option><option value="30">30</option><option value="50">50</option>
+    </select>
+  </div>
   <div id="statsPanel" class="stats-panel"></div>
+</div>
+
+
+<header>
+  <h1>6000 Words, One Journey</h1>
+  <p class="creator-credit">Created by Mohammed Taufiq Bolwala</p>
+  <p>A1 → C2 · English definitions · 2-3 example sentences per word</p>
+  <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel">6000 of 6000 words — COMPLETE! 🎉</div>
+</header>
+
+<main>
   <div class="count-row" id="countRow"></div>
   <div class="grid" id="grid"></div>
   <div class="pagination" id="pagination"></div>
@@ -6129,13 +6172,18 @@ let activeLevel = "ALL";
 let query = "";
 let currentPage = 1;
 const PAGE_SIZE = 10;
+let activeDay = 0; // 0 = all days
+let perDay = 20;
+try { const pd = parseInt(localStorage.getItem('vocabPerDay')); if([10,15,20,25,30,50].includes(pd)) perDay = pd; } catch(e){}
+(function(){ const c = {}; VOCAB_DATA.forEach((it,i)=>{ it._g = i; c[it.l] = c[it.l]||0; it._li = c[it.l]++; }); })();
+function dayOf(it){ return Math.floor((activeLevel==='ALL' ? it._g : it._li)/perDay) + 1; }
 
 const levelBtnWrap = document.getElementById('levelButtons');
 levels.forEach(lv=>{
   const b = document.createElement('button');
   b.className = 'lvl-btn' + (lv==='ALL' ? ' active' : '');
   b.textContent = lv;
-  b.onclick = () => { activeLevel = lv; currentPage = 1; document.querySelectorAll('.lvl-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); render(); };
+  b.onclick = () => { activeLevel = lv; activeDay = 0; currentPage = 1; document.querySelectorAll('.lvl-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); render(); };
   levelBtnWrap.appendChild(b);
 });
 
@@ -6144,24 +6192,60 @@ document.getElementById('searchBox').addEventListener('input', e=>{ query = e.ta
 function renderStats(){
   const panel = document.getElementById('statsPanel');
   panel.innerHTML = '';
-  const target = 1000; // each level's own target is 1000 words (6000 grand total)
-  levels.filter(l=>l!=='ALL').forEach(lv=>{
+  const target = 1000; // each level target
+  const show = activeLevel==='ALL' ? levels.filter(l=>l!=='ALL') : [activeLevel];
+  panel.classList.toggle('single', show.length===1);
+  show.forEach(lv=>{
     const levelWords = VOCAB_DATA.filter(d=>d.l===lv);
     const count = levelWords.length;
     const pct = Math.min(100, Math.round((count/target)*100));
     const readCount = levelWords.filter(d=>readWords.has(d.w)).length;
+    const unreadCount = count - readCount;
     const readPct = count ? Math.round((readCount/count)*100) : 0;
     const card = document.createElement('div');
-    card.className = 'stat-card';
-    card.innerHTML = `
-      <span class="stat-level" style="background:${levelColors[lv]}">${lv}</span>
-      <div class="stat-count">${count}<span style="font-size:12px;color:var(--muted);font-weight:400;"> / ${target}</span></div>
-      <div class="stat-sub">${pct}% added</div>
-      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${levelColors[lv]}"></div></div>
-      <div class="stat-read">✓ ${readCount} read (${readPct}%)</div>
-    `;
+    if(show.length===1){
+      card.className = 'stat-card single';
+      card.innerHTML = `
+        <div class="single-head"><span class="stat-level" style="background:${levelColors[lv]}">${lv}</span><span class="single-title">Level ${lv} · ${pct}% added</span></div>
+        <div class="single-nums">
+          <div><b>${count}</b><span>Total</span></div>
+          <div class="n-read"><b>${readCount}</b><span>✓ Read</span></div>
+          <div class="n-unread"><b>${unreadCount}</b><span>○ Unread</span></div>
+        </div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${readPct}%;background:${levelColors[lv]}"></div></div>
+        <div class="stat-read">${readPct}% complete</div>`;
+    } else {
+      card.className = 'stat-card';
+      card.innerHTML = `
+        <span class="stat-level" style="background:${levelColors[lv]}">${lv}</span>
+        <div class="stat-count">${count}<span style="font-size:12px;color:var(--muted);font-weight:400;"> / ${target}</span></div>
+        <div class="stat-sub">${pct}% added</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${readPct}%;background:${levelColors[lv]}"></div></div>
+        <div class="stat-read">✓ ${readCount} read · ${unreadCount} unread</div>`;
+    }
     panel.appendChild(card);
   });
+  buildDayOptions();
+}
+
+function buildDayOptions(){
+  const sel = document.getElementById('daySelect');
+  if(!sel) return;
+  const items = activeLevel==='ALL' ? VOCAB_DATA : VOCAB_DATA.filter(d=>d.l===activeLevel);
+  const days = Math.max(1, Math.ceil(items.length/perDay));
+  const tot = new Array(days).fill(0), rd = new Array(days).fill(0);
+  items.forEach((it,i)=>{ const d = Math.floor(i/perDay); tot[d]++; if(readWords.has(it.w)) rd[d]++; });
+  let html = `<option value="0">All days (${days})</option>`;
+  for(let d=0; d<days; d++){
+    html += `<option value="${d+1}">Day ${d+1} · ${rd[d]}/${tot[d]} read${(tot[d] && rd[d]===tot[d]) ? ' ✓' : ''}</option>`;
+  }
+  sel.innerHTML = html;
+  if(activeDay > days) activeDay = 0;
+  sel.value = String(activeDay);
+  document.getElementById('dayPrev').disabled = activeDay <= 1;
+  document.getElementById('dayNext').disabled = activeDay >= days;
+  const info = document.getElementById('dayInfo');
+  info.textContent = activeDay ? `${tot[activeDay-1]} words · ${rd[activeDay-1]} read · ${tot[activeDay-1]-rd[activeDay-1]} unread` : '';
 }
 
 let voicesReady = false;
@@ -6234,17 +6318,19 @@ function render(){
     const q = query;
     const searchOk = !q || item.w.toLowerCase().includes(q) || item.d.toLowerCase().includes(q);
     const readOk = readFilter==='all' || (readFilter==='read' && readWords.has(item.w)) || (readFilter==='unread' && !readWords.has(item.w));
-    return levelOk && searchOk && readOk;
+    const dayOk = activeDay===0 || dayOf(item)===activeDay;
+    return levelOk && searchOk && readOk && dayOk;
   });
 
-  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const pageSize = activeDay ? Math.max(list.length,1) : PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
   if(currentPage > totalPages) currentPage = totalPages;
-  const startIdx = (currentPage - 1) * PAGE_SIZE;
-  const pageItems = list.slice(startIdx, startIdx + PAGE_SIZE);
+  const startIdx = (currentPage - 1) * pageSize;
+  const pageItems = list.slice(startIdx, startIdx + pageSize);
 
   document.getElementById('countRow').textContent =
     list.length === 0 ? 'No words found' :
-    `Showing ${startIdx + 1}-${Math.min(startIdx + PAGE_SIZE, list.length)} of ${list.length} word${list.length!==1?'s':''}`;
+    `Showing ${startIdx + 1}-${Math.min(startIdx + pageSize, list.length)} of ${list.length} word${list.length!==1?'s':''}`;
 
   pageItems.forEach(item=>{
     const card = document.createElement('div');
@@ -6297,6 +6383,16 @@ function renderPagination(totalPages){
   wrap.appendChild(label);
   wrap.appendChild(next);
 }
+
+document.getElementById('perDaySelect').value = String(perDay);
+document.getElementById('perDaySelect').addEventListener('change', e=>{
+  perDay = parseInt(e.target.value); activeDay = 0; currentPage = 1;
+  try { localStorage.setItem('vocabPerDay', String(perDay)); } catch(err){}
+  render();
+});
+document.getElementById('daySelect').addEventListener('change', e=>{ activeDay = parseInt(e.target.value); currentPage = 1; render(); });
+document.getElementById('dayPrev').addEventListener('click', ()=>{ if(activeDay>1){ activeDay--; currentPage = 1; render(); } });
+document.getElementById('dayNext').addEventListener('click', ()=>{ activeDay = activeDay + 1; currentPage = 1; render(); });
 
 const total = 6000;
 const have = VOCAB_DATA.length;
