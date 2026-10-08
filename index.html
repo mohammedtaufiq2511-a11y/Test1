@@ -91,7 +91,7 @@
   /* ===== Top menu + Day wise + single level card ===== */
   .topmenu{max-width:1000px;margin:0 auto;padding:18px 20px 6px;}
   .topmenu .controls{max-width:none;margin:0;padding:0;}
-  .topmenu .stats-panel{margin:16px 0 0;}
+  .topmenu .stats-panel{margin:0 0 16px;}
   .day-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;}
   .day-row label{font-size:12px;font-weight:600;color:var(--muted);}
   .day-row select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--ink);cursor:pointer;max-width:100%;}
@@ -165,6 +165,8 @@
 </header>
 
 <div class="topmenu">
+  <div id="statsPanel" class="stats-panel"></div>
+
 <div class="controls">
   <div class="search">
     <input type="text" id="searchBox" placeholder="Search a word or definition...">
@@ -190,7 +192,6 @@
       <option value="25">25</option><option value="30">30</option><option value="50">50</option>
     </select>
   </div>
-  <div id="statsPanel" class="stats-panel"></div>
 </div>
 
 <main>
