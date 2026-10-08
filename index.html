@@ -12,13 +12,14 @@
     --brass:#8a6d2f; --brass-deep:#6b5222; --moss:#3f5d4a;
     --line:#dcd5c4; --muted:#6b6558;
     --a1:#3f5d4a; --a2:#587a52; --b1:#8a6d2f; --b2:#a8791f; --c1:#a04a2f; --c2:#7d3a54;
+    --glow1:rgba(138,109,47,0.08); --glow2:rgba(63,93,74,0.10);
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
 
   header{padding:44px 24px 28px;text-align:center;border-bottom:1px solid var(--line);background:
-    radial-gradient(circle at 20% 20%, rgba(138,109,47,0.08), transparent 55%),
-    radial-gradient(circle at 80% 0%, rgba(63,93,74,0.10), transparent 50%);}
+    radial-gradient(circle at 20% 20%, var(--glow1), transparent 55%),
+    radial-gradient(circle at 80% 0%, var(--glow2), transparent 50%);position:relative;}
   h1{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(28px,5vw,44px);margin:0 0 6px;letter-spacing:-0.01em;}
   header p{color:var(--muted);margin:0;font-size:15px;}
   .creator-credit{font-size:12px;color:var(--muted);opacity:.8;margin-top:4px !important;font-style:italic;}
@@ -112,9 +113,56 @@
   .single-nums .n-read b{color:var(--moss);}
   .single-nums .n-unread b{color:var(--c1);}
   @media (max-width:520px){ .day-sep{display:none;} .single-nums b{font-size:22px;} }
+
+  /* ===== Card spacing (after removing totals) ===== */
+  .stat-card:not(.single) .stat-bar-track{margin:8px 0 6px;}
+
+  /* ===== Themes ===== */
+  .theme-switch{position:absolute;top:12px;right:14px;display:flex;gap:7px;align-items:center;}
+  .theme-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;transition:transform .15s, border-color .15s;}
+  .theme-dot:hover{transform:scale(1.12);}
+  .theme-dot.active{border-color:var(--ink);box-shadow:0 0 0 2px var(--panel) inset;}
+  :root[data-theme="midnight"]{
+    color-scheme:dark;
+    --ink:#e9e6dd; --paper:#12161d; --panel:#1b212b; --line:#2d3644; --muted:#9aa4b2;
+    --brass:#d6ac55; --brass-deep:#e6c987; --moss:#5fa882;
+    --a1:#4c9a78; --a2:#6ab06a; --b1:#c49a3c; --b2:#d68c2a; --c1:#d9684a; --c2:#c4608a;
+    --glow1:rgba(214,172,85,0.07); --glow2:rgba(95,168,130,0.09);
+  }
+  :root[data-theme="midnight"] .card:hover{box-shadow:0 8px 20px rgba(0,0,0,0.35);}
+  :root[data-theme="midnight"] .hint{color:#7d8795;}
+  :root[data-theme="ocean"]{
+    --ink:#12263a; --paper:#eaf3f8; --panel:#ffffff; --line:#cbdce8; --muted:#587086;
+    --brass:#1f6f9b; --brass-deep:#16506f; --moss:#1f7a6b;
+    --a1:#1f7a6b; --a2:#2f8f5a; --b1:#1f6f9b; --b2:#3a5fb0; --c1:#7a4bb0; --c2:#b0407a;
+    --glow1:rgba(31,111,155,0.10); --glow2:rgba(31,122,107,0.10);
+  }
+  :root[data-theme="rose"]{
+    --ink:#3a1f26; --paper:#fbf0ee; --panel:#ffffff; --line:#ecd3cf; --muted:#7d5a5f;
+    --brass:#b5533c; --brass-deep:#8c3a28; --moss:#a14a5e;
+    --a1:#a14a5e; --a2:#c0617a; --b1:#b5533c; --b2:#d1802f; --c1:#8c3a6a; --c2:#5f3a8c;
+    --glow1:rgba(181,83,60,0.09); --glow2:rgba(161,74,94,0.09);
+  }
+  :root[data-theme="forest"]{
+    --ink:#1c2a1f; --paper:#edf3ea; --panel:#ffffff; --line:#cfdcc9; --muted:#5d6e5e;
+    --brass:#6b7f2a; --brass-deep:#4d5d1d; --moss:#2f6b46;
+    --a1:#2f6b46; --a2:#4a8a3c; --b1:#6b7f2a; --b2:#a08a1f; --c1:#a0562a; --c2:#7a3a50;
+    --glow1:rgba(107,127,42,0.10); --glow2:rgba(47,107,70,0.10);
+  }
+  @media (max-width:520px){ .theme-switch{top:8px;right:10px;gap:5px;} .theme-dot{width:20px;height:20px;} }
 </style>
+<script>try{var t=localStorage.getItem("vocabTheme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 </head>
 <body>
+
+<header>
+  <div class="theme-switch" id="themeSwitch" aria-label="Theme"></div>
+  <h1>6000 Words, One Journey</h1>
+  <p class="creator-credit">Created by Mohammed Taufiq Bolwala</p>
+  <p>A1 → C2 · English definitions · 2-3 example sentences per word</p>
+  <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel">6000 of 6000 words — COMPLETE! 🎉</div>
+</header>
 
 <div class="topmenu">
 <div class="controls">
@@ -144,15 +192,6 @@
   </div>
   <div id="statsPanel" class="stats-panel"></div>
 </div>
-
-
-<header>
-  <h1>6000 Words, One Journey</h1>
-  <p class="creator-credit">Created by Mohammed Taufiq Bolwala</p>
-  <p>A1 → C2 · English definitions · 2-3 example sentences per word</p>
-  <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
-  <div class="progress-label" id="progressLabel">6000 of 6000 words — COMPLETE! 🎉</div>
-</header>
 
 <main>
   <div class="count-row" id="countRow"></div>
@@ -6206,7 +6245,7 @@ function renderStats(){
     if(show.length===1){
       card.className = 'stat-card single';
       card.innerHTML = `
-        <div class="single-head"><span class="stat-level" style="background:${levelColors[lv]}">${lv}</span><span class="single-title">Level ${lv} · ${pct}% added</span></div>
+        <div class="single-head"><span class="stat-level" style="background:${levelColors[lv]}">${lv}</span><span class="single-title">Level ${lv}</span></div>
         <div class="single-nums">
           <div><b>${count}</b><span>Total</span></div>
           <div class="n-read"><b>${readCount}</b><span>✓ Read</span></div>
@@ -6218,8 +6257,6 @@ function renderStats(){
       card.className = 'stat-card';
       card.innerHTML = `
         <span class="stat-level" style="background:${levelColors[lv]}">${lv}</span>
-        <div class="stat-count">${count}<span style="font-size:12px;color:var(--muted);font-weight:400;"> / ${target}</span></div>
-        <div class="stat-sub">${pct}% added</div>
         <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${readPct}%;background:${levelColors[lv]}"></div></div>
         <div class="stat-read">✓ ${readCount} read · ${unreadCount} unread</div>`;
     }
@@ -6400,6 +6437,37 @@ document.getElementById('progressFill').style.width = Math.round((have/total)*10
 document.getElementById('progressLabel').textContent = `${have} of ${total} words added · ${readWords.size} marked as read`;
 
 render();
+</script>
+<script>
+(function(){
+  var THEMES = [
+    {id:'classic',  name:'Classic',  paper:'#f6f3ec', accent:'#8a6d2f'},
+    {id:'midnight', name:'Midnight (Dark)', paper:'#12161d', accent:'#d6ac55'},
+    {id:'ocean',    name:'Ocean',    paper:'#eaf3f8', accent:'#1f6f9b'},
+    {id:'rose',     name:'Rose',     paper:'#fbf0ee', accent:'#b5533c'},
+    {id:'forest',   name:'Forest',   paper:'#edf3ea', accent:'#2f6b46'}
+  ];
+  var cur = 'classic';
+  try { cur = localStorage.getItem('vocabTheme') || 'classic'; } catch(e){}
+  if(!THEMES.some(function(t){return t.id===cur;})) cur = 'classic';
+  var wrap = document.getElementById('themeSwitch');
+  function apply(id){
+    cur = id;
+    if(id==='classic') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', id);
+    try { localStorage.setItem('vocabTheme', id); } catch(e){}
+    Array.prototype.forEach.call(wrap.children, function(b){ b.classList.toggle('active', b.dataset.id===id); });
+  }
+  THEMES.forEach(function(t){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'theme-dot'; b.dataset.id = t.id;
+    b.title = t.name; b.setAttribute('aria-label', 'Theme: ' + t.name);
+    b.style.background = 'linear-gradient(135deg,' + t.paper + ' 50%,' + t.accent + ' 50%)';
+    b.onclick = function(){ apply(t.id); };
+    wrap.appendChild(b);
+  });
+  apply(cur);
+})();
 </script>
 </body>
 </html>
